@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Java Code Editor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #ece9e6, #ffffff);
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #2c3e50;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      background-color: #f7f7f7;
+    }
+
+    textarea#code {
+      background-color: #272822;
+      color: #f8f8f2;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #2980b9;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #1c5980;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    #output {
+      background-color: #f4f4f4;
+      color: #333;
+      font-weight: bold;
+    }
+
+    p#error {
+      color: red;
+      margin-top: -10px;
+    }
+
+    p#compileStatus {
+      color: green;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    @media screen and (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1> Java Code Editor</h1>
+    <label for="classname">Class Name</label>
+    <input type="text" id="classname" name="classname" placeholder="e.g., Main" />
+
+    <label for="code">Java Code</label>
+    <textarea id="code" name="code" rows="15" placeholder="Write your Java code here..."></textarea>
+
+    <div class="button-group">
+      <button id="compileBtn"> Compile</button>
+      <button id="runBtn"> Run</button>
+    </div>
+
+    <p id="error"></p>
+    <p id="compileStatus"></p>
+
+    <label for="input">Input (if any)</label>
+    <textarea id="input" name="input" rows="5" placeholder="Enter program input here..."></textarea>
+
+    <label for="output">Output</label>
+    <textarea id="output" rows="5" readonly placeholder="Program output will appear here..."></textarea>
+
+    <p class="note"> Make sure your JDK environment variables are set up correctly.</p>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById('compileBtn').addEventListener('click', function () {
+        const code = document.getElementById('code').value.trim();
+        const className = document.getElementById('classname').value.trim();
+
+        fetch('/compile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code, className })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('compileStatus').innerText = ' Compilation successful!';
+            document.getElementById('error').innerText = '';
+          } else {
+            document.getElementById('compileStatus').innerText = ' Compilation failed.';
+            document.getElementById('error').innerText = data.error;
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      });
+
+      document.getElementById("runBtn").addEventListener("click", async () => {
+        const code = document.getElementById("code").value.trim();
+        const className = document.getElementById("classname").value.trim();
+        const input = document.getElementById("input").value;
+
+        const response = await fetch('/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, className, input })
+        });
+
+        const result = await response.json();
+        document.getElementById("output").value = result.output || result.error || "Unknown error occurred.";
+      });
+    });
+  </script>
+</body>
+</html>
